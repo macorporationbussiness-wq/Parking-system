@@ -1,0 +1,286 @@
+// Smart Parking System - Main JavaScript File
+
+$(document).ready(function() {
+    initializeSystem();
+});
+
+function initializeSystem() {
+    console.log('🚗 Smart Parking System Initialized');
+    
+    // Initialize all components
+    initAnimations();
+    initFormValidations();
+    initRealTimeUpdates();
+    initInteractiveElements();
+}
+
+// ===== ANIMATIONS =====
+function initAnimations() {
+    // Add hover animations to cards
+    $('.card').hover(
+        function() {
+            $(this).addClass('shadow-lg animate__animated animate__pulse');
+        },
+        function() {
+            $(this).removeClass('shadow-lg animate__animated animate__pulse');
+        }
+    );
+
+    // Add loading animations to buttons
+    $('.btn').on('click', function() {
+        const btn = $(this);
+        if (!btn.hasClass('no-loading')) {
+            btn.prop('disabled', true);
+            setTimeout(() => {
+                btn.prop('disabled', false);
+            }, 2000);
+        }
+    });
+
+    // Scroll animations
+    $(window).on('scroll', function() {
+        $('.animate-on-scroll').each(function() {
+            const element = $(this);
+            const position = element.offset().top;
+            const scrollPosition = $(window).scrollTop() + $(window).height();
+            
+            if (position < scrollPosition - 50) {
+                element.addClass('animate__animated animate__fadeInUp');
+            }
+        });
+    });
+}
+
+// ===== FORM VALIDATIONS =====
+function initFormValidations() {
+    // Registration number validation
+    $('input[name="registration_number"]').on('input', function() {
+        const value = $(this).val().toUpperCase().replace(/[^A-Z0-9]/g, '');
+        $(this).val(value);
+        
+        if (value.length >= 3) {
+            $(this).addClass('is-valid').removeClass('is-invalid');
+        } else {
+            $(this).removeClass('is-valid is-invalid');
+        }
+    });
+
+    // Contact number validation
+    $('input[name="contact_number"]').on('input', function() {
+        const value = $(this).val().replace(/[^0-9]/g, '');
+        $(this).val(value);
+        
+        if (value.length === 10 || value.length === 0) {
+            $(this).addClass('is-valid').removeClass('is-invalid');
+        } else {
+            $(this).addClass('is-invalid').removeClass('is-valid');
+        }
+    });
+
+    // Slot number validation
+    $('input[type="number"]').on('input', function() {
+        const value = parseInt($(this).val());
+        if (value >= 1 && value <= 100) {
+            $(this).addClass('is-valid').removeClass('is-invalid');
+        } else {
+            $(this).addClass('is-invalid').removeClass('is-valid');
+        }
+    });
+}
+
+// ===== REAL-TIME UPDATES =====
+function initRealTimeUpdates() {
+    // Update statistics every 30 seconds
+    setInterval(updateStatistics, 30000);
+    
+    // Update clock every second
+    setInterval(updateRealTimeClock, 1000);
+}
+
+function updateStatistics() {
+    $.ajax({
+        url: '/api/statistics',
+        method: 'GET',
+        success: function(data) {
+            if (data.success) {
+                updateStatisticsUI(data.data);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error fetching statistics:', error);
+        }
+    });
+}
+
+function updateStatisticsUI(stats) {
+    // Update dashboard statistics if on dashboard
+    $('#total-slots').text(stats.total_slots);
+    $('#occupied-slots').text(stats.occupied_slots);
+    $('#free-slots').text(stats.free_slots);
+    $('#hash-entries').text(stats.hash_table_entries);
+    
+    // Update utilization percentage with animation
+    const utilizationElement = $('.utilization-percentage');
+    if (utilizationElement.length) {
+        utilizationElement.text(stats.utilization_percentage + '%');
+    }
+}
+
+function updateRealTimeClock() {
+    const now = new Date();
+    const timeString = now.toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    }).replace(/,/g, '');
+    
+    $('#current-time').text(timeString);
+}
+
+// ===== INTERACTIVE ELEMENTS =====
+function initInteractiveElements() {
+    // Tooltip initialization
+    $('[data-bs-toggle="tooltip"]').tooltip({
+        trigger: 'hover',
+        placement: 'top'
+    });
+
+    // Popover initialization
+    $('[data-bs-toggle="popover"]').popover();
+
+    // Auto-dismiss alerts
+    $('.alert').delay(5000).fadeOut(400, function() {
+        $(this).alert('close');
+    });
+
+    // Smooth scrolling for anchor links
+    $('a[href^="#"]').on('click', function(event) {
+        event.preventDefault();
+        const target = $(this.getAttribute('href'));
+        if (target.length) {
+            $('html, body').stop().animate({
+                scrollTop: target.offset().top - 70
+            }, 1000);
+        }
+    });
+}
+
+// ===== UTILITY FUNCTIONS =====
+function showNotification(message, type = 'info') {
+    const alertClass = {
+        'success': 'alert-success',
+        'error': 'alert-danger',
+        'warning': 'alert-warning',
+        'info': 'alert-info'
+    }[type] || 'alert-info';
+
+    const notification = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show position-fixed" 
+             style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+
+    $('body').append(notification);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        notification.alert('close');
+    }, 5000);
+}
+
+function formatDuration(hours) {
+    if (hours < 1) {
+        return Math.round(hours * 60) + ' minutes';
+    } else if (hours < 24) {
+        return hours.toFixed(1) + ' hours';
+    } else {
+        return (hours / 24).toFixed(1) + ' days';
+    }
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// ===== API FUNCTIONS =====
+function searchVehicle(query, type = 'registration') {
+    return $.ajax({
+        url: `/api/search?type=${type}&query=${encodeURIComponent(query)}`,
+        method: 'GET'
+    });
+}
+
+function allocateSlot(vehicleData) {
+    return $.ajax({
+        url: '/api/allocate',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(vehicleData)
+    });
+}
+
+function removeVehicle(registrationNumber) {
+    return $.ajax({
+        url: '/api/remove',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            registration_number: registrationNumber
+        })
+    });
+}
+
+// ===== PERFORMANCE MONITORING =====
+function logPerformance(operation, startTime) {
+    const endTime = performance.now();
+    const duration = endTime - startTime;
+    
+    console.log(`⏱️ ${operation} completed in ${duration.toFixed(2)}ms`);
+    
+    if (duration > 100) {
+        console.warn(`⚠️ ${operation} took ${duration.toFixed(2)}ms - Consider optimization`);
+    }
+}
+
+// ===== ERROR HANDLING =====
+$(document).ajaxError(function(event, xhr, settings, error) {
+    console.error('AJAX Error:', {
+        url: settings.url,
+        method: settings.method,
+        status: xhr.status,
+        error: error
+    });
+    
+    showNotification('Network error occurred. Please try again.', 'error');
+});
+
+// Global error handler
+window.addEventListener('error', function(e) {
+    console.error('Global Error:', e.error);
+});
+
+// ===== EXPORT FUNCTIONS FOR GLOBAL USE =====
+window.ParkingSystem = {
+    showNotification,
+    formatDuration,
+    searchVehicle,
+    allocateSlot,
+    removeVehicle,
+    logPerformance
+};
+
+console.log('🎯 Parking System JS loaded successfully');

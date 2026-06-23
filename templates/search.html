@@ -1,0 +1,478 @@
+{% extends "base.html" %}
+
+{% block title %}Search Vehicle - Smart Parking System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2 fw-bold text-primary mb-1 animate__animated animate__fadeInLeft">
+                    <i class="fas fa-search me-2"></i>Search Vehicle
+                </h1>
+                <p class="text-muted mb-0 animate__animated animate__fadeInLeft animate__delay-1s">
+                    Find vehicles by registration number, slot number, or contact
+                </p>
+            </div>
+            <div class="animate__animated animate__fadeInRight">
+                <span class="badge bg-success fs-6">
+                    <i class="fas fa-bolt me-1"></i>O(1) Search Time
+                </span>
+            </div>
+        </div>
+
+        <!-- Search Form -->
+        <div class="card border-0 shadow-sm mb-4 animate__animated animate__fadeInUp">
+            <div class="card-header bg-white border-0 py-4">
+                <h5 class="fw-bold mb-0 text-center">
+                    <i class="fas fa-search me-2 text-primary"></i>Advanced Search
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" id="searchForm">
+                    <div class="row g-3">
+                        <!-- Search Type -->
+                        <div class="col-md-4">
+                            <label for="search_type" class="form-label fw-bold">
+                                <i class="fas fa-filter me-1 text-primary"></i>Search By
+                            </label>
+                            <select class="form-select form-select-lg" id="search_type" name="search_type" required>
+                                <option value="registration" {% if search_type == 'registration' %}selected{% endif %}>
+                                    🚗 Registration Number
+                                </option>
+                                <option value="slot" {% if search_type == 'slot' %}selected{% endif %}>
+                                    🅿️ Slot Number
+                                </option>
+                                <option value="contact" {% if search_type == 'contact' %}selected{% endif %}>
+                                    📞 Contact Number
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Search Query -->
+                        <div class="col-md-6">
+                            <label for="query" class="form-label fw-bold" id="queryLabel">
+                                <i class="fas fa-search me-1 text-primary"></i>Search Query
+                            </label>
+                            <input type="text" 
+                                   class="form-control form-control-lg" 
+                                   id="query"
+                                   name="query" 
+                                   placeholder="Enter search term..."
+                                   value="{{ query if query else '' }}"
+                                   required>
+                        </div>
+
+                        <!-- Search Button -->
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary btn-lg w-100 py-3 fw-bold">
+                                <i class="fas fa-search me-2"></i>Search
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Search Tips -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="alert alert-info border-0 bg-info bg-opacity-10">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-lightbulb fa-lg text-info me-3"></i>
+                                    <div>
+                                        <small class="fw-bold">Search Tips:</small>
+                                        <small class="d-block text-muted">
+                                            • Registration: ABC123, DL01AB1234 (auto-converted to uppercase)
+                                        </small>
+                                        <small class="d-block text-muted">
+                                            • Slot: Enter slot number (1-100)
+                                        </small>
+                                        <small class="d-block text-muted">
+                                            • Contact: 10-digit phone number
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Search Results -->
+        {% if results %}
+            {% if results.success %}
+                <!-- Success Result -->
+                <div class="card border-success shadow-sm mb-4 animate__animated animate__bounceIn">
+                    <div class="card-header bg-success text-white border-0 py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="fw-bold mb-0">
+                                <i class="fas fa-check-circle me-2"></i>Vehicle Found
+                            </h5>
+                            <span class="badge bg-light text-success fs-6">
+                                <i class="fas fa-bolt me-1"></i>Instant Result
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Vehicle Information -->
+                            <div class="col-md-6">
+                                <div class="card bg-light border-0 h-100">
+                                    <div class="card-header bg-transparent border-0">
+                                        <h6 class="fw-bold text-primary mb-0">
+                                            <i class="fas fa-car me-2"></i>Vehicle Details
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="flex-shrink-0">
+                                                {% if results.vehicle_type == 'Car' %}
+                                                    <i class="fas fa-car fa-3x text-primary"></i>
+                                                {% elif results.vehicle_type == 'SUV' %}
+                                                    <i class="fas fa-truck fa-3x text-warning"></i>
+                                                {% elif results.vehicle_type == 'Motorcycle' %}
+                                                    <i class="fas fa-motorcycle fa-3x text-danger"></i>
+                                                {% else %}
+                                                    <i class="fas fa-vehicle fa-3x text-secondary"></i>
+                                                {% endif %}
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <h4 class="fw-bold text-dark mb-1">{{ results.registration_number }}</h4>
+                                                <span class="badge bg-primary fs-6">{{ results.vehicle_type }}</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="row g-2">
+                                            <div class="col-12">
+                                                <strong>Registration:</strong>
+                                                <span class="text-dark float-end">{{ results.registration_number }}</span>
+                                            </div>
+                                            <div class="col-12">
+                                                <strong>Vehicle Type:</strong>
+                                                <span class="text-dark float-end">{{ results.vehicle_type }}</span>
+                                            </div>
+                                            {% if results.contact_number %}
+                                            <div class="col-12">
+                                                <strong>Contact:</strong>
+                                                <span class="text-dark float-end">{{ results.contact_number }}</span>
+                                            </div>
+                                            {% endif %}
+                                            <div class="col-12">
+                                                <strong>Entry Time:</strong>
+                                                <span class="text-dark float-end">{{ results.entry_time }}</span>
+                                            </div>
+                                            <div class="col-12">
+                                                <strong>Duration:</strong>
+                                                <span class="text-dark float-end">{{ results.parking_duration_hours }} hours</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Slot Information -->
+                            <div class="col-md-6">
+                                <div class="card bg-primary bg-opacity-5 border-0 h-100">
+                                    <div class="card-header bg-transparent border-0">
+                                        <h6 class="fw-bold text-primary mb-0">
+                                            <i class="fas fa-parking me-2"></i>Parking Information
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="text-center mb-4">
+                                            <div class="bg-primary bg-opacity-10 rounded-circle p-4 d-inline-block">
+                                                <h1 class="fw-bold text-primary mb-0">{{ results.slot_number }}</h1>
+                                            </div>
+                                            <p class="text-muted mt-2 mb-0">Slot Number</p>
+                                        </div>
+
+                                        <div class="row g-2">
+                                            <div class="col-12">
+                                                <strong>Slot Number:</strong>
+                                                <span class="badge bg-primary float-end fs-6">#{{ results.slot_number }}</span>
+                                            </div>
+                                            <div class="col-12">
+                                                <strong>Floor:</strong>
+                                                <span class="text-dark float-end">Floor {{ results.floor }}</span>
+                                            </div>
+                                            <div class="col-12">
+                                                <strong>Status:</strong>
+                                                <span class="badge bg-success float-end">Occupied</span>
+                                            </div>
+                                            <div class="col-12">
+                                                <strong>Search Type:</strong>
+                                                <span class="text-dark float-end text-capitalize">{{ search_type }}</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Quick Actions -->
+                                        <div class="mt-4 pt-3 border-top">
+                                            <div class="d-grid gap-2">
+                                                <a href="{{ url_for('remove_vehicle') }}?reg={{ results.registration_number }}" 
+                                                   class="btn btn-danger btn-sm">
+                                                    <i class="fas fa-sign-out-alt me-1"></i>Remove Vehicle
+                                                </a>
+                                                <a href="{{ url_for('display_slots') }}?filter=occupied" 
+                                                   class="btn btn-outline-primary btn-sm">
+                                                    <i class="fas fa-list me-1"></i>View All Occupied
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <!-- No Results Found -->
+                <div class="card border-warning shadow-sm mb-4 animate__animated animate__shakeX">
+                    <div class="card-header bg-warning text-dark border-0 py-3">
+                        <h5 class="fw-bold mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>No Results Found
+                        </h5>
+                    </div>
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-search fa-4x text-muted mb-4"></i>
+                        <h5 class="text-muted fw-bold mb-3">{{ results.message }}</h5>
+                        <p class="text-muted mb-4">Please check your search criteria and try again.</p>
+                        
+                        <div class="row justify-content-center">
+                            <div class="col-md-8">
+                                <div class="alert alert-info border-0 bg-info bg-opacity-10">
+                                    <h6 class="fw-bold mb-2">Search Suggestions:</h6>
+                                    <ul class="list-unstyled mb-0 small">
+                                        <li><i class="fas fa-check me-2 text-success"></i>Verify registration number spelling</li>
+                                        <li><i class="fas fa-check me-2 text-success"></i>Check slot number range (1-100)</li>
+                                        <li><i class="fas fa-check me-2 text-success"></i>Ensure contact number is 10 digits</li>
+                                        <li><i class="fas fa-check me-2 text-success"></i>Try different search criteria</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        {% else %}
+            <!-- Initial Search State -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body text-center py-5">
+                    <div class="animate__animated animate__pulse animate__infinite">
+                        <i class="fas fa-search fa-4x text-primary mb-4"></i>
+                    </div>
+                    <h4 class="fw-bold text-primary mb-3">Ready to Search</h4>
+                    <p class="text-muted mb-4">Enter your search criteria above to find vehicles in the parking system.</p>
+                    
+                    <div class="row justify-content-center">
+                        <div class="col-lg-8">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="card border-0 bg-primary bg-opacity-5 h-100">
+                                        <div class="card-body">
+                                            <i class="fas fa-id-card fa-2x text-primary mb-3"></i>
+                                            <h6 class="fw-bold">Registration Search</h6>
+                                            <small class="text-muted">Find by vehicle registration number</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border-0 bg-success bg-opacity-5 h-100">
+                                        <div class="card-body">
+                                            <i class="fas fa-parking fa-2x text-success mb-3"></i>
+                                            <h6 class="fw-bold">Slot Search</h6>
+                                            <small class="text-muted">Find vehicle by parking slot number</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border-0 bg-info bg-opacity-5 h-100">
+                                        <div class="card-body">
+                                            <i class="fas fa-phone fa-2x text-info mb-3"></i>
+                                            <h6 class="fw-bold">Contact Search</h6>
+                                            <small class="text-muted">Find by contact number</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Search Statistics -->
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card border-0 bg-primary bg-opacity-5">
+                    <div class="card-body text-center">
+                        <i class="fas fa-bolt fa-2x text-primary mb-2"></i>
+                        <h4 class="fw-bold text-primary">O(1)</h4>
+                        <small class="text-muted">Average Search Time</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 bg-success bg-opacity-5">
+                    <div class="card-body text-center">
+                        <i class="fas fa-database fa-2x text-success mb-2"></i>
+                        <h4 class="fw-bold text-success">Hash Table</h4>
+                        <small class="text-muted">Optimized Storage</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 bg-info bg-opacity-5">
+                    <div class="card-body text-center">
+                        <i class="fas fa-shield-alt fa-2x text-info mb-2"></i>
+                        <h4 class="fw-bold text-info">Secure</h4>
+                        <small class="text-muted">Protected Data Access</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Update placeholder and label based on search type
+    function updateSearchUI() {
+        const searchType = $('#search_type').val();
+        const queryInput = $('#query');
+        const queryLabel = $('#queryLabel');
+        
+        switch(searchType) {
+            case 'registration':
+                queryInput.attr('placeholder', 'Enter registration number (e.g., ABC123)');
+                queryLabel.html('<i class="fas fa-id-card me-1 text-primary"></i>Registration Number');
+                break;
+            case 'slot':
+                queryInput.attr('placeholder', 'Enter slot number (1-100)');
+                queryLabel.html('<i class="fas fa-parking me-1 text-primary"></i>Slot Number');
+                break;
+            case 'contact':
+                queryInput.attr('placeholder', 'Enter 10-digit contact number');
+                queryLabel.html('<i class="fas fa-phone me-1 text-primary"></i>Contact Number');
+                break;
+        }
+        
+        // Clear input when search type changes
+        queryInput.val('');
+        queryInput.focus();
+    }
+
+    // Initial UI setup
+    updateSearchUI();
+
+    // Update UI when search type changes
+    $('#search_type').on('change', updateSearchUI);
+
+    // Auto-format input based on search type
+    $('#query').on('input', function() {
+        const searchType = $('#search_type').val();
+        const value = $(this).val();
+        
+        if (searchType === 'registration') {
+            // Auto-uppercase for registration numbers
+            $(this).val(value.toUpperCase().replace(/[^A-Z0-9]/g, ''));
+        } else if (searchType === 'slot') {
+            // Only allow numbers for slot search
+            $(this).val(value.replace(/[^0-9]/g, ''));
+        } else if (searchType === 'contact') {
+            // Only allow numbers for contact search
+            $(this).val(value.replace(/[^0-9]/g, ''));
+        }
+    });
+
+    // Form validation
+    $('#searchForm').on('submit', function(e) {
+        const searchType = $('#search_type').val();
+        const query = $('#query').val().trim();
+        const submitBtn = $(this).find('button[type="submit"]');
+
+        // Basic validation
+        if (!query) {
+            e.preventDefault();
+            showAlert('Please enter a search query', 'error');
+            return false;
+        }
+
+        // Type-specific validation
+        if (searchType === 'registration' && query.length < 3) {
+            e.preventDefault();
+            showAlert('Registration number must be at least 3 characters', 'error');
+            return false;
+        }
+
+        if (searchType === 'slot') {
+            const slotNum = parseInt(query);
+            if (isNaN(slotNum) || slotNum < 1 || slotNum > 100) {
+                e.preventDefault();
+                showAlert('Please enter a valid slot number (1-100)', 'error');
+                return false;
+            }
+        }
+
+        if (searchType === 'contact' && !/^\d{10}$/.test(query)) {
+            e.preventDefault();
+            showAlert('Please enter a valid 10-digit contact number', 'error');
+            return false;
+        }
+
+        // Show loading state
+        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Searching...');
+
+        return true;
+    });
+
+    // Alert function
+    function showAlert(message, type) {
+        const alertClass = type === 'error' ? 'alert-danger' : 'alert-success';
+        const alertHtml = `
+            <div class="alert ${alertClass} alert-dismissible fade show animate__animated animate__shakeX" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        $('#searchForm').before(alertHtml);
+        
+        // Auto-remove alert after 5 seconds
+        setTimeout(() => {
+            $('.alert').alert('close');
+        }, 5000);
+    }
+
+    // Auto-focus on query input
+    $('#query').focus();
+});
+</script>
+
+<style>
+.card {
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.btn {
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.animate__pulse {
+    animation-duration: 2s;
+}
+</style>
+{% endblock %}

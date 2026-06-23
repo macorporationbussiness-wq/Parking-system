@@ -1,0 +1,428 @@
+{% extends "base.html" %}
+
+{% block title %}Display Slots - Smart Parking System{% endblock %}
+
+{% block extra_css %}
+<style>
+.slot-card {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.slot-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.slot-occupied {
+    border-left: 4px solid #dc3545;
+    background: linear-gradient(135deg, #fff, #ffe6e6);
+}
+
+.slot-free {
+    border-left: 4px solid #28a745;
+    background: linear-gradient(135deg, #fff, #e6ffe6);
+}
+
+.slot-legend {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    display: inline-block;
+}
+
+.floor-badge {
+    font-size: 0.7em;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+}
+
+.vehicle-type-icon {
+    font-size: 1.2em;
+    margin-right: 5px;
+}
+
+.stats-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+}
+
+.stats-card .card-body {
+    padding: 1.5rem;
+}
+
+.filter-active {
+    background-color: #0d6efd !important;
+    color: white !important;
+    border-color: #0d6efd !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2 fw-bold text-primary mb-1 animate__animated animate__fadeInLeft">
+                    <i class="fas fa-list me-2"></i>Parking Slots Overview
+                </h1>
+                <p class="text-muted mb-0 animate__animated animate__fadeInLeft animate__delay-1s">
+                    Real-time status of all parking slots with filtering options
+                </p>
+            </div>
+            <div class="animate__animated animate__fadeInRight">
+                <span class="badge bg-success fs-6">
+                    <i class="fas fa-bolt me-1"></i>Live Updates
+                </span>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card stats-card shadow-sm border-0 animate__animated animate__fadeInUp">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title text-white-50 mb-2">TOTAL SLOTS</h6>
+                                <h2 class="fw-bold text-white mb-0">{{ statistics.total_slots if statistics else 0 }}</h2>
+                            </div>
+                            <div class="bg-white bg-opacity-20 p-3 rounded">
+                                <i class="fas fa-parking fa-2x text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card bg-success text-white shadow-sm border-0 animate__animated animate__fadeInUp animate__delay-1s">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title text-white-50 mb-2">FREE SLOTS</h6>
+                                <h2 class="fw-bold text-white mb-0">{{ statistics.free_slots if statistics else 0 }}</h2>
+                            </div>
+                            <div class="bg-white bg-opacity-20 p-3 rounded">
+                                <i class="fas fa-check-circle fa-2x text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card bg-danger text-white shadow-sm border-0 animate__animated animate__fadeInUp animate__delay-2s">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title text-white-50 mb-2">OCCUPIED SLOTS</h6>
+                                <h2 class="fw-bold text-white mb-0">{{ statistics.occupied_slots if statistics else 0 }}</h2>
+                            </div>
+                            <div class="bg-white bg-opacity-20 p-3 rounded">
+                                <i class="fas fa-car fa-2x text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card bg-info text-white shadow-sm border-0 animate__animated animate__fadeInUp animate__delay-3s">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title text-white-50 mb-2">UTILIZATION</h6>
+                                <h2 class="fw-bold text-white mb-0">{{ statistics.utilization_percentage if statistics else 0 }}%</h2>
+                            </div>
+                            <div class="bg-white bg-opacity-20 p-3 rounded">
+                                <i class="fas fa-chart-pie fa-2x text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters and Controls -->
+        <div class="card border-0 shadow-sm mb-4 animate__animated animate__fadeIn">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold mb-3">
+                            <i class="fas fa-filter me-2 text-primary"></i>Filter Slots
+                        </h6>
+                        <div class="btn-group" role="group">
+                            <a href="{{ url_for('display_slots') }}?filter=all&floor={{ floor_filter }}" 
+                               class="btn btn-outline-primary {% if filter_type == 'all' %}filter-active{% endif %}">
+                                All Slots
+                            </a>
+                            <a href="{{ url_for('display_slots') }}?filter=occupied&floor={{ floor_filter }}" 
+                               class="btn btn-outline-danger {% if filter_type == 'occupied' %}filter-active{% endif %}">
+                                Occupied
+                            </a>
+                            <a href="{{ url_for('display_slots') }}?filter=free&floor={{ floor_filter }}" 
+                               class="btn btn-outline-success {% if filter_type == 'free' %}filter-active{% endif %}">
+                                Free
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-md-end align-items-center">
+                            <label class="form-label fw-bold me-3 mb-0">Floor:</label>
+                            <select class="form-select w-auto" id="floorFilter" onchange="filterByFloor(this.value)">
+                                <option value="all" {% if floor_filter == 'all' %}selected{% endif %}>All Floors</option>
+                                <option value="1" {% if floor_filter == '1' %}selected{% endif %}>Floor 1</option>
+                                <option value="2" {% if floor_filter == '2' %}selected{% endif %}>Floor 2</option>
+                                <option value="3" {% if floor_filter == '3' %}selected{% endif %}>Floor 3</option>
+                                <option value="4" {% if floor_filter == '4' %}selected{% endif %}>Floor 4</option>
+                                <option value="5" {% if floor_filter == '5' %}selected{% endif %}>Floor 5</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Legend -->
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="d-flex flex-wrap gap-3">
+                            <small class="text-muted">
+                                <span class="slot-legend bg-success me-1"></span> Free Slot
+                            </small>
+                            <small class="text-muted">
+                                <span class="slot-legend bg-danger me-1"></span> Occupied Slot
+                            </small>
+                            <small class="text-muted">
+                                <i class="fas fa-car text-primary me-1"></i> Car
+                            </small>
+                            <small class="text-muted">
+                                <i class="fas fa-truck text-warning me-1"></i> SUV/Truck
+                            </small>
+                            <small class="text-muted">
+                                <i class="fas fa-motorcycle text-danger me-1"></i> Motorcycle
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slots Grid -->
+        <div class="card border-0 shadow-sm animate__animated animate__fadeIn">
+            <div class="card-header bg-white border-0 py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0">
+                        <i class="fas fa-parking me-2 text-primary"></i>
+                        Parking Slots 
+                        <span class="text-muted fs-6">
+                            (Showing {{ slots|length }} slots)
+                        </span>
+                    </h5>
+                    <div>
+                        <button class="btn btn-outline-primary btn-sm" onclick="refreshSlots()">
+                            <i class="fas fa-sync-alt me-1"></i>Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if slots %}
+                    <div class="row g-3" id="slotsGrid">
+                        {% for slot in slots %}
+                            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                                <div class="card slot-card h-100 {% if slot.status == 'occupied' %}slot-occupied{% else %}slot-free{% endif %}">
+                                    <div class="card-body position-relative">
+                                        <!-- Floor Badge -->
+                                        <span class="badge floor-badge bg-secondary">F{{ slot.floor }}</span>
+                                        
+                                        <!-- Slot Number -->
+                                        <div class="text-center mb-3">
+                                            <h4 class="fw-bold text-dark mb-0">#{{ slot.slot_number }}</h4>
+                                            <small class="text-muted">Slot Number</small>
+                                        </div>
+
+                                        <!-- Status Badge -->
+                                        <div class="text-center mb-3">
+                                            {% if slot.status == 'occupied' %}
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-car me-1"></i>Occupied
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check me-1"></i>Available
+                                                </span>
+                                            {% endif %}
+                                        </div>
+
+                                        <!-- Vehicle Information -->
+                                        {% if slot.status == 'occupied' %}
+                                            <div class="border-top pt-3">
+                                                <div class="text-center mb-2">
+                                                    {% if slot.vehicle_type == 'Car' %}
+                                                        <i class="fas fa-car vehicle-type-icon text-primary"></i>
+                                                    {% elif slot.vehicle_type == 'SUV' %}
+                                                        <i class="fas fa-truck vehicle-type-icon text-warning"></i>
+                                                    {% elif slot.vehicle_type == 'Motorcycle' %}
+                                                        <i class="fas fa-motorcycle vehicle-type-icon text-danger"></i>
+                                                    {% elif slot.vehicle_type == 'Bike' %}
+                                                        <i class="fas fa-bicycle vehicle-type-icon text-success"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-vehicle vehicle-type-icon text-secondary"></i>
+                                                    {% endif %}
+                                                    <strong class="text-dark">{{ slot.vehicle_type }}</strong>
+                                                </div>
+                                                
+                                                <div class="small">
+                                                    <div class="mb-1">
+                                                        <strong>Reg No:</strong>
+                                                        <br>
+                                                        <span class="text-primary fw-bold">{{ slot.registration_number }}</span>
+                                                    </div>
+                                                    {% if slot.contact_number %}
+                                                    <div class="mb-1">
+                                                        <strong>Contact:</strong>
+                                                        <br>
+                                                        <small class="text-muted">{{ slot.contact_number }}</small>
+                                                    </div>
+                                                    {% endif %}
+                                                    <div class="mb-1">
+                                                        <strong>Duration:</strong>
+                                                        <br>
+                                                        <small class="text-muted">{{ slot.parking_duration_hours }} hours</small>
+                                                    </div>
+                                                    <div class="mb-1">
+                                                        <strong>Since:</strong>
+                                                        <br>
+                                                        <small class="text-muted">{{ slot.entry_time }}</small>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Quick Actions -->
+                                                <div class="mt-3 pt-2 border-top">
+                                                    <div class="d-grid gap-1">
+                                                        <a href="{{ url_for('search_vehicle') }}?search_type=registration&query={{ slot.registration_number }}" 
+                                                           class="btn btn-outline-primary btn-sm">
+                                                            <i class="fas fa-search me-1"></i>Details
+                                                        </a>
+                                                        <a href="{{ url_for('remove_vehicle') }}?reg={{ slot.registration_number }}" 
+                                                           class="btn btn-outline-danger btn-sm">
+                                                            <i class="fas fa-sign-out-alt me-1"></i>Remove
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <!-- Free Slot Actions -->
+                                            <div class="text-center mt-3">
+                                                <a href="{{ url_for('allocate_slot') }}" 
+                                                   class="btn btn-success btn-sm">
+                                                    <i class="fas fa-parking me-1"></i>Allocate
+                                                </a>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <!-- No Slots Message -->
+                    <div class="text-center py-5">
+                        <i class="fas fa-parking fa-4x text-muted mb-4"></i>
+                        <h5 class="text-muted fw-bold">No Slots Found</h5>
+                        <p class="text-muted">No parking slots match the current filter criteria.</p>
+                        <a href="{{ url_for('display_slots') }}" class="btn btn-primary">
+                            <i class="fas fa-sync me-1"></i>Reset Filters
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Hash Table Info -->
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h6 class="fw-bold mb-1">
+                            <i class="fas fa-database me-2 text-info"></i>Hash Table Performance
+                        </h6>
+                        <p class="text-muted small mb-0">
+                            Load Factor: {{ statistics.hash_table_load_factor if statistics else 0 }} | 
+                            Size: {{ statistics.hash_table_size if statistics else 0 }} | 
+                            Entries: {{ statistics.hash_table_entries if statistics else 0 }}
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <span class="badge bg-success">
+                            <i class="fas fa-bolt me-1"></i>O(1) Operations
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterByFloor(floor) {
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('floor', floor);
+    window.location.href = currentUrl.toString();
+}
+
+function refreshSlots() {
+    const btn = event.target;
+    const originalHtml = btn.innerHTML;
+    
+    // Show loading state
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...';
+    btn.disabled = true;
+    
+    // Reload the page after a short delay to show the animation
+    setTimeout(() => {
+        window.location.reload();
+    }, 1000);
+}
+
+// Auto-refresh every 30 seconds
+setTimeout(() => {
+    window.location.reload();
+}, 30000);
+
+// Add hover effects
+document.addEventListener('DOMContentLoaded', function() {
+    const slotCards = document.querySelectorAll('.slot-card');
+    slotCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+});
+
+// Real-time statistics update
+function updateStats() {
+    fetch('/api/statistics')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update stats cards if needed
+                console.log('Stats updated:', data.data);
+            }
+        })
+        .catch(error => console.error('Error updating stats:', error));
+}
+
+// Update stats every 15 seconds
+setInterval(updateStats, 15000);
+</script>
+{% endblock %}

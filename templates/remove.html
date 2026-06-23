@@ -1,0 +1,376 @@
+{% extends "base.html" %}
+
+{% block title %}Remove Vehicle - Smart Parking System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2 fw-bold text-primary mb-1 animate__animated animate__fadeInLeft">
+                    <i class="fas fa-sign-out-alt me-2"></i>Remove Vehicle
+                </h1>
+                <p class="text-muted mb-0 animate__animated animate__fadeInLeft animate__delay-1s">
+                    Process vehicle exit and free up parking slot
+                </p>
+            </div>
+            <div class="animate__animated animate__fadeInRight">
+                <a href="{{ url_for('display_slots') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-list me-1"></i>View All Slots
+                </a>
+            </div>
+        </div>
+
+        <!-- Success Message -->
+        {% if status == 'success' %}
+        <div class="card border-success shadow-sm mb-4 animate__animated animate__bounceIn">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <div class="bg-success bg-opacity-10 rounded-circle p-3">
+                            <i class="fas fa-check-circle fa-2x text-success"></i>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <h5 class="text-success fw-bold mb-1">Vehicle Removed Successfully!</h5>
+                        <p class="text-muted mb-0">{{ message }}</p>
+                    </div>
+                    <div class="col-auto">
+                        <span class="badge bg-success fs-6">
+                            <i class="fas fa-car me-1"></i>Freed
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Error Message -->
+        {% if status == 'error' %}
+        <div class="card border-danger shadow-sm mb-4 animate__animated animate__shakeX">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <div class="bg-danger bg-opacity-10 rounded-circle p-3">
+                            <i class="fas fa-exclamation-circle fa-2x text-danger"></i>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <h5 class="text-danger fw-bold mb-1">Removal Failed</h5>
+                        <p class="text-muted mb-0">{{ message }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Removal Form -->
+        <div class="card border-0 shadow-sm animate__animated animate__fadeInUp">
+            <div class="card-header bg-white border-0 py-4">
+                <h5 class="fw-bold mb-0 text-center">
+                    <i class="fas fa-car me-2 text-primary"></i>Vehicle Exit Form
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" id="removeForm">
+                    <!-- Registration Number -->
+                    <div class="mb-4">
+                        <label for="registration_number" class="form-label fw-bold">
+                            <i class="fas fa-id-card me-1 text-primary"></i>Registration Number *
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-car text-muted"></i>
+                            </span>
+                            <input type="text" 
+                                   class="form-control form-control-lg" 
+                                   id="registration_number"
+                                   name="registration_number" 
+                                   placeholder="Enter vehicle registration number to remove"
+                                   required
+                                   maxlength="15"
+                                   pattern="[A-Za-z0-9]+"
+                                   title="Enter valid registration number">
+                        </div>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>Enter the exact registration number used during entry
+                        </div>
+                    </div>
+
+                    <!-- Vehicle Preview (will be populated by JavaScript) -->
+                    <div id="vehiclePreview" class="card bg-light border-0 mb-4" style="display: none;">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-3">
+                                <i class="fas fa-search me-2 text-info"></i>Vehicle Found
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Registration:</strong> <span id="previewReg"></span></p>
+                                    <p class="mb-1"><strong>Vehicle Type:</strong> <span id="previewType"></span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Slot Number:</strong> <span id="previewSlot"></span></p>
+                                    <p class="mb-1"><strong>Entry Time:</strong> <span id="previewEntry"></span></p>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <button type="button" id="confirmRemove" class="btn btn-danger btn-sm">
+                                    <i class="fas fa-trash-alt me-1"></i>Confirm Removal
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger btn-lg py-3 fw-bold" id="submitBtn">
+                            <i class="fas fa-sign-out-alt me-2"></i>Remove Vehicle
+                        </button>
+                        <button type="reset" class="btn btn-outline-secondary" id="resetBtn">
+                            <i class="fas fa-undo me-1"></i>Reset Form
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mt-4">
+            <div class="col-md-6 mb-3">
+                <div class="card border-warning border-0 bg-warning bg-opacity-5 h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-bolt fa-2x text-warning"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="fw-bold text-warning mb-1">Instant Removal</h6>
+                                <p class="text-muted small mb-0">O(1) time complexity using hash tables</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card border-info border-0 bg-info bg-opacity-5 h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-sync-alt fa-2x text-info"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="fw-bold text-info mb-1">Auto Slot Freeing</h6>
+                                <p class="text-muted small mb-0">Slot automatically becomes available for new vehicles</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Exits -->
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-header bg-white border-0">
+                <h6 class="fw-bold mb-0">
+                    <i class="fas fa-history me-2 text-primary"></i>Recent Exits
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if recent_activities %}
+                    {% set recent_exits = recent_activities|selectattr("action", "equalto", "Vehicle removed")|list %}
+                    {% if recent_exits %}
+                        <div class="list-group list-group-flush">
+                            {% for activity in recent_exits[-5:] %}
+                                <div class="list-group-item border-0 px-0">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1 fw-bold">{{ activity.registration_number }}</h6>
+                                            <small class="text-muted">Slot {{ activity.slot_number }} • {{ activity.timestamp }}</small>
+                                        </div>
+                                        <span class="badge bg-success">Freed</span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center mb-0">No recent exits</p>
+                    {% endif %}
+                {% else %}
+                    <p class="text-muted text-center mb-0">No activity data available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Auto-format registration number to uppercase
+    $('#registration_number').on('input', function() {
+        this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    });
+
+    // Real-time vehicle lookup
+    let lookupTimeout;
+    $('#registration_number').on('input', function() {
+        const regNumber = $(this).val().trim();
+        
+        // Clear previous timeout
+        clearTimeout(lookupTimeout);
+        
+        if (regNumber.length >= 3) {
+            // Show loading state
+            $('#vehiclePreview').hide().html('<div class="text-center py-3"><i class="fas fa-spinner fa-spin me-2"></i>Searching...</div>').fadeIn();
+            
+            // Delay lookup to avoid excessive requests
+            lookupTimeout = setTimeout(() => {
+                $.get('/api/search?type=registration&query=' + encodeURIComponent(regNumber), function(data) {
+                    if (data.success && data.found) {
+                        // Vehicle found - show preview
+                        $('#vehiclePreview').html(`
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-3 text-success">
+                                    <i class="fas fa-check-circle me-2"></i>Vehicle Found
+                                </h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p class="mb-1"><strong>Registration:</strong> <span class="text-primary">${data.registration_number}</span></p>
+                                        <p class="mb-1"><strong>Vehicle Type:</strong> <span class="badge bg-info">${data.vehicle_type}</span></p>
+                                        ${data.contact_number ? `<p class="mb-1"><strong>Contact:</strong> ${data.contact_number}</p>` : ''}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p class="mb-1"><strong>Slot Number:</strong> <span class="badge bg-primary">${data.slot_number}</span></p>
+                                        <p class="mb-1"><strong>Floor:</strong> Floor ${data.floor}</p>
+                                        <p class="mb-1"><strong>Parking Duration:</strong> ${data.parking_duration_hours} hours</p>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <button type="button" id="confirmRemove" class="btn btn-danger btn-lg w-100">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Confirm Vehicle Exit
+                                    </button>
+                                    <small class="text-muted d-block mt-2">
+                                        <i class="fas fa-info-circle me-1"></i>Click to confirm vehicle removal
+                                    </small>
+                                </div>
+                            </div>
+                        `).fadeIn();
+                        
+                        // Add confirm removal handler
+                        $('#confirmRemove').on('click', function() {
+                            $('#submitBtn').click();
+                        });
+                        
+                    } else {
+                        // Vehicle not found
+                        $('#vehiclePreview').html(`
+                            <div class="card-body text-center">
+                                <i class="fas fa-car fa-3x text-muted mb-3"></i>
+                                <h6 class="text-danger fw-bold mb-2">Vehicle Not Found</h6>
+                                <p class="text-muted small mb-0">No vehicle found with registration: ${regNumber}</p>
+                                <small class="text-muted">Please check the registration number and try again</small>
+                            </div>
+                        `).fadeIn();
+                    }
+                }).fail(function() {
+                    $('#vehiclePreview').html(`
+                        <div class="card-body text-center">
+                            <i class="fas fa-exclamation-triangle fa-2x text-warning mb-3"></i>
+                            <p class="text-muted mb-0">Error searching for vehicle</p>
+                        </div>
+                    `).fadeIn();
+                });
+            }, 500);
+        } else {
+            $('#vehiclePreview').fadeOut();
+        }
+    });
+
+    // Form submission handling
+    $('#removeForm').on('submit', function(e) {
+        const regNumber = $('#registration_number').val().trim();
+
+        if (regNumber.length < 3) {
+            e.preventDefault();
+            showAlert('Please enter a valid registration number (minimum 3 characters)', 'error');
+            return false;
+        }
+
+        // Show loading state
+        const submitBtn = $('#submitBtn');
+        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Processing Exit...');
+
+        return true;
+    });
+
+    // Reset form handler
+    $('#resetBtn').on('click', function() {
+        $('#vehiclePreview').fadeOut();
+        $('#registration_number').focus();
+    });
+
+    // Alert function
+    function showAlert(message, type) {
+        const alertClass = type === 'error' ? 'alert-danger' : 'alert-success';
+        const alertHtml = `
+            <div class="alert ${alertClass} alert-dismissible fade show animate__animated animate__shakeX" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        $('.card-body').prepend(alertHtml);
+        
+        // Auto-remove alert after 5 seconds
+        setTimeout(() => {
+            $('.alert').alert('close');
+        }, 5000);
+    }
+
+    // Add input focus effects
+    $('#registration_number').on('focus', function() {
+        $(this).parent().addClass('input-group-focus');
+    }).on('blur', function() {
+        $(this).parent().removeClass('input-group-focus');
+    });
+
+    // Auto-focus on registration input
+    $('#registration_number').focus();
+});
+</script>
+
+<style>
+.input-group-focus {
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    border-radius: 0.375rem;
+    transition: all 0.15s ease-in-out;
+}
+
+.form-control:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #c82333, #a71e2a);
+    transform: translateY(-2px);
+}
+
+#vehiclePreview {
+    border-left: 4px solid #28a745;
+    transition: all 0.3s ease;
+}
+
+#vehiclePreview:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}

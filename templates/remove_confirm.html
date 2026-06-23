@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block title %}Confirm Removal - Smart Parking System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <!-- Header -->
+        <div class="text-center mb-4">
+            <h1 class="h2 fw-bold text-danger mb-1 animate__animated animate__fadeInDown">
+                <i class="fas fa-exclamation-triangle me-2"></i>Confirm Removal
+            </h1>
+            <p class="text-muted animate__animated animate__fadeInDown animate__delay-1s">
+                Please confirm vehicle exit from parking
+            </p>
+        </div>
+
+        <!-- Confirmation Card -->
+        <div class="card border-danger shadow-lg animate__animated animate__bounceIn">
+            <div class="card-header bg-danger text-white text-center py-4">
+                <i class="fas fa-exclamation-circle fa-3x mb-3"></i>
+                <h4 class="fw-bold mb-0">Confirm Vehicle Exit</h4>
+            </div>
+            <div class="card-body p-4">
+                <!-- Vehicle Details -->
+                <div class="alert alert-warning border-0 bg-warning bg-opacity-10 mb-4">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-info-circle fa-lg text-warning me-3"></i>
+                        <div>
+                            <strong>Warning:</strong> This action cannot be undone. The vehicle will be removed from the parking system.
+                        </div>
+                    </div>
+                </div>
+
+                {% if vehicle_info and vehicle_info.success %}
+                <!-- Vehicle Information -->
+                <div class="card border-0 bg-light mb-4">
+                    <div class="card-body">
+                        <h6 class="fw-bold text-center mb-3">
+                            <i class="fas fa-car me-2 text-primary"></i>Vehicle Details
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="flex-shrink-0">
+                                        {% if vehicle_info.vehicle_type == 'Car' %}
+                                            <i class="fas fa-car fa-2x text-primary"></i>
+                                        {% elif vehicle_info.vehicle_type == 'SUV' %}
+                                            <i class="fas fa-truck fa-2x text-warning"></i>
+                                        {% elif vehicle_info.vehicle_type == 'Motorcycle' %}
+                                            <i class="fas fa-motorcycle fa-2x text-danger"></i>
+                                        {% else %}
+                                            <i class="fas fa-vehicle fa-2x text-secondary"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h5 class="fw-bold text-dark mb-1">{{ vehicle_info.registration_number }}</h5>
+                                        <span class="badge bg-primary">{{ vehicle_info.vehicle_type }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-center">
+                                    <div class="bg-danger bg-opacity-10 rounded-circle p-3 d-inline-block">
+                                        <h3 class="fw-bold text-danger mb-0">{{ vehicle_info.slot_number }}</h3>
+                                    </div>
+                                    <p class="text-muted mt-2 mb-0">Slot Number</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-borderless">
+                                        <tbody>
+                                            <tr>
+                                                <td><strong>Registration:</strong></td>
+                                                <td class="text-end">{{ vehicle_info.registration_number }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Vehicle Type:</strong></td>
+                                                <td class="text-end">{{ vehicle_info.vehicle_type }}</td>
+                                            </tr>
+                                            {% if vehicle_info.contact_number %}
+                                            <tr>
+                                                <td><strong>Contact:</strong></td>
+                                                <td class="text-end">{{ vehicle_info.contact_number }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            <tr>
+                                                <td><strong>Slot Number:</strong></td>
+                                                <td class="text-end">#{{ vehicle_info.slot_number }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Floor:</strong></td>
+                                                <td class="text-end">Floor {{ vehicle_info.floor }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Entry Time:</strong></td>
+                                                <td class="text-end">{{ vehicle_info.entry_time }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Parking Duration:</strong></td>
+                                                <td class="text-end">{{ vehicle_info.parking_duration_hours }} hours</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Confirmation Form -->
+                <form method="POST" action="{{ url_for('remove_vehicle') }}">
+                    <input type="hidden" name="registration_number" value="{{ reg_number }}">
+                    <input type="hidden" name="confirmation" value="yes">
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <button type="submit" class="btn btn-danger btn-lg w-100 py-3 fw-bold">
+                                <i class="fas fa-check-circle me-2"></i>Confirm Exit
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="{{ url_for('remove_vehicle') }}" class="btn btn-outline-secondary btn-lg w-100 py-3">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </div>
+                </form>
+                {% else %}
+                <!-- Error State -->
+                <div class="text-center py-4">
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <h5 class="text-danger fw-bold mb-3">Vehicle Not Found</h5>
+                    <p class="text-muted mb-4">The vehicle information could not be retrieved.</p>
+                    <a href="{{ url_for('remove_vehicle') }}" class="btn btn-primary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Removal
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Additional Information -->
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-body text-center">
+                <div class="row">
+                    <div class="col-md-4">
+                        <i class="fas fa-bolt fa-2x text-primary mb-2"></i>
+                        <h6 class="fw-bold">Instant Processing</h6>
+                        <small class="text-muted">O(1) removal time</small>
+                    </div>
+                    <div class="col-md-4">
+                        <i class="fas fa-sync-alt fa-2x text-success mb-2"></i>
+                        <h6 class="fw-bold">Slot Freed</h6>
+                        <small class="text-muted">Immediate availability</small>
+                    </div>
+                    <div class="col-md-4">
+                        <i class="fas fa-database fa-2x text-info mb-2"></i>
+                        <h6 class="fw-bold">Hash Table Updated</h6>
+                        <small class="text-muted">Real-time data sync</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Add confirmation dialog for the confirm button
+    $('form').on('submit', function(e) {
+        const confirmBtn = $(this).find('button[type="submit"]');
+        
+        // Show loading state
+        confirmBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Processing...');
+        
+        // Add a small delay to show the loading state
+        setTimeout(() => {
+            return true;
+        }, 1000);
+    });
+
+    // Add animation to the card
+    $('.card').hover(
+        function() {
+            $(this).addClass('shadow-lg');
+        },
+        function() {
+            $(this).removeClass('shadow-lg');
+        }
+    );
+
+    // Auto-focus on confirm button for accessibility
+    $('button[type="submit"]').focus();
+});
+</script>
+
+<style>
+.card {
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.btn {
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    border: none;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #c0392b, #a93226);
+    transform: translateY(-1px);
+}
+
+.alert-warning {
+    border-left: 4px solid #f39c12;
+}
+
+.table td {
+    padding: 0.5rem 0.25rem;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.table tr:last-child td {
+    border-bottom: none;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block title %}Allocate Slot - Smart Parking System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2 fw-bold text-primary mb-1 animate__animated animate__fadeInLeft">
+                    <i class="fas fa-car-side me-2"></i>Allocate Parking Slot
+                </h1>
+                <p class="text-muted mb-0 animate__animated animate__fadeInLeft animate__delay-1s">
+                    Assign a free parking slot to incoming vehicle
+                </p>
+            </div>
+            <div class="animate__animated animate__fadeInRight">
+                <a href="{{ url_for('display_slots') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-list me-1"></i>View Available Slots
+                </a>
+            </div>
+        </div>
+
+        <!-- Success Animation Card -->
+        {% if status == 'success' %}
+        <div class="card border-success shadow-sm mb-4 animate__animated animate__bounceIn">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <div class="bg-success bg-opacity-10 rounded-circle p-3">
+                            <i class="fas fa-check-circle fa-2x text-success"></i>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <h5 class="text-success fw-bold mb-1">Allocation Successful!</h5>
+                        <p class="text-muted mb-0">{{ message }}</p>
+                    </div>
+                    <div class="col-auto">
+                        <span class="badge bg-success fs-6">Slot {{ allocated_slot }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Error Message -->
+        {% if status == 'error' %}
+        <div class="card border-danger shadow-sm mb-4 animate__animated animate__shakeX">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <div class="bg-danger bg-opacity-10 rounded-circle p-3">
+                            <i class="fas fa-exclamation-circle fa-2x text-danger"></i>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <h5 class="text-danger fw-bold mb-1">Allocation Failed</h5>
+                        <p class="text-muted mb-0">{{ message }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Allocation Form -->
+        <div class="card border-0 shadow-sm animate__animated animate__fadeInUp">
+            <div class="card-header bg-white border-0 py-4">
+                <h5 class="fw-bold mb-0 text-center">
+                    <i class="fas fa-car me-2 text-primary"></i>Vehicle Information
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" id="allocateForm">
+                    <!-- Registration Number -->
+                    <div class="mb-4">
+                        <label for="registration_number" class="form-label fw-bold">
+                            <i class="fas fa-id-card me-1 text-primary"></i>Registration Number *
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-car text-muted"></i>
+                            </span>
+                            <input type="text" 
+                                   class="form-control form-control-lg" 
+                                   id="registration_number"
+                                   name="registration_number" 
+                                   placeholder="Enter vehicle registration number (e.g., ABC123, DL01AB1234)"
+                                   required
+                                   maxlength="15"
+                                   pattern="[A-Za-z0-9]+"
+                                   title="Enter valid registration number (letters and numbers only)">
+                        </div>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>Enter vehicle registration number without spaces
+                        </div>
+                    </div>
+
+                    <!-- Vehicle Type -->
+                    <div class="mb-4">
+                        <label for="vehicle_type" class="form-label fw-bold">
+                            <i class="fas fa-car me-1 text-primary"></i>Vehicle Type *
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-tags text-muted"></i>
+                            </span>
+                            <select class="form-select form-select-lg" id="vehicle_type" name="vehicle_type" required>
+                                <option value="Car" selected>🚗 Car</option>
+                                <option value="SUV">🚙 SUV</option>
+                                <option value="Motorcycle">🏍️ Motorcycle</option>
+                                <option value="Bike">🚲 Bike</option>
+                                <option value="Truck">🚚 Truck</option>
+                                <option value="Van">🚐 Van</option>
+                                <option value="Electric">⚡ Electric Vehicle</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Contact Number -->
+                    <div class="mb-4">
+                        <label for="contact_number" class="form-label fw-bold">
+                            <i class="fas fa-phone me-1 text-primary"></i>Contact Number
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-mobile-alt text-muted"></i>
+                            </span>
+                            <input type="tel" 
+                                   class="form-control form-control-lg" 
+                                   id="contact_number"
+                                   name="contact_number" 
+                                   placeholder="Enter contact number (optional)"
+                                   pattern="[0-9]{10}"
+                                   title="Enter 10-digit contact number">
+                        </div>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>Optional: For emergency contact
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg py-3 fw-bold">
+                            <i class="fas fa-parking me-2"></i>Allocate Parking Slot
+                        </button>
+                        <button type="reset" class="btn btn-outline-secondary">
+                            <i class="fas fa-undo me-1"></i>Reset Form
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Information Cards -->
+        <div class="row mt-4">
+            <div class="col-md-6 mb-3">
+                <div class="card border-info border-0 bg-info bg-opacity-5 h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-bolt fa-2x text-info"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="fw-bold text-info mb-1">Fast Allocation</h6>
+                                <p class="text-muted small mb-0">O(1) time complexity using hash tables</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card border-success border-0 bg-success bg-opacity-5 h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-shield-alt fa-2x text-success"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="fw-bold text-success mb-1">Smart Assignment</h6>
+                                <p class="text-muted small mb-0">Automatically assigns optimal parking slot</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3">
+                    <i class="fas fa-chart-bar me-2 text-primary"></i>Parking Lot Status
+                </h6>
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="border-end">
+                            <h4 class="fw-bold text-primary mb-1" id="total-slots">{{ stats.total_slots if stats else 0 }}</h4>
+                            <small class="text-muted">Total Slots</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="border-end">
+                            <h4 class="fw-bold text-success mb-1" id="free-slots">{{ stats.free_slots if stats else 0 }}</h4>
+                            <small class="text-muted">Available</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <h4 class="fw-bold text-danger mb-1" id="occupied-slots">{{ stats.occupied_slots if stats else 0 }}</h4>
+                        <small class="text-muted">Occupied</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Auto-format registration number to uppercase
+    $('#registration_number').on('input', function() {
+        this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    });
+
+    // Form validation with enhanced feedback
+    $('#allocateForm').on('submit', function(e) {
+        const regNumber = $('#registration_number').val().trim();
+        const contactNumber = $('#contact_number').val().trim();
+
+        // Validate registration number
+        if (regNumber.length < 3) {
+            e.preventDefault();
+            showAlert('Please enter a valid registration number (minimum 3 characters)', 'error');
+            $('#registration_number').focus();
+            return false;
+        }
+
+        // Validate contact number if provided
+        if (contactNumber && !/^\d{10}$/.test(contactNumber)) {
+            e.preventDefault();
+            showAlert('Please enter a valid 10-digit contact number', 'error');
+            $('#contact_number').focus();
+            return false;
+        }
+
+        // Show loading state
+        const submitBtn = $(this).find('button[type="submit"]');
+        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Allocating...');
+
+        return true;
+    });
+
+    // Real-time slot availability check
+    function checkSlotAvailability() {
+        $.get('/api/statistics', function(data) {
+            if (data.success) {
+                $('#total-slots').text(data.data.total_slots);
+                $('#free-slots').text(data.data.free_slots);
+                $('#occupied-slots').text(data.data.occupied_slots);
+
+                // Update button state based on availability
+                const submitBtn = $('button[type="submit"]');
+                if (data.data.free_slots === 0) {
+                    submitBtn.prop('disabled', true).html('<i class="fas fa-times me-2"></i>Parking Full');
+                    submitBtn.removeClass('btn-primary').addClass('btn-danger');
+                } else {
+                    submitBtn.prop('disabled', false).html('<i class="fas fa-parking me-2"></i>Allocate Parking Slot');
+                    submitBtn.removeClass('btn-danger').addClass('btn-primary');
+                }
+            }
+        });
+    }
+
+    // Check availability every 10 seconds
+    checkSlotAvailability();
+    setInterval(checkSlotAvailability, 10000);
+
+    // Alert function
+    function showAlert(message, type) {
+        const alertClass = type === 'error' ? 'alert-danger' : 'alert-success';
+        const alertHtml = `
+            <div class="alert ${alertClass} alert-dismissible fade show animate__animated animate__shakeX" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        $('.card-body').prepend(alertHtml);
+        
+        // Auto-remove alert after 5 seconds
+        setTimeout(() => {
+            $('.alert').alert('close');
+        }, 5000);
+    }
+
+    // Add input animations
+    $('input, select').on('focus', function() {
+        $(this).parent().addClass('input-group-focus');
+    }).on('blur', function() {
+        $(this).parent().removeClass('input-group-focus');
+    });
+});
+</script>
+
+<style>
+.input-group-focus {
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    border-radius: 0.375rem;
+    transition: all 0.15s ease-in-out;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.btn {
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+</style>
+{% endblock %}
